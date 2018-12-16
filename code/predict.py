@@ -47,7 +47,7 @@ def _calculate_sigma_points(state, root_cov, kappa):
         state + scale * root_cov,
         state - scale * root_cov,
     ])
-    sigma_points.index = range(2 * n)
+    sigma_points.index = range(2 * n + 1)
     return sigma_points
 
 
@@ -63,7 +63,7 @@ def _calculate_sigma_weights(state, kappa):
 
 def _transform_sigma_points(sigma_points, params):
     factors = sigma_points.columns
-    to_concat = ()
+    to_concat = []
     for factor in factors:
         transformed = _cobb_douglas(sigma_points, **params[factor])
         to_concat.append(transformed.rename(factor))
@@ -76,7 +76,7 @@ def _cobb_douglas(sigma_points, gammas, a):
 
 
 def _predict_state(transformed_sigma_points, sigma_weights):
-    return transformed_sigma_points.dot(sigma_weights)
+    return transformed_sigma_points.T.dot(sigma_weights)
 
 
 def _predict_root_cov(
