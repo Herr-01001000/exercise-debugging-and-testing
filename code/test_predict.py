@@ -3,6 +3,9 @@ import pandas as pd
 from pandas.testing import assert_frame_equal, assert_series_equal
 
 from predict import square_root_unscented_predict
+from predict import _calculate_sigma_points
+from predict import _calculate_sigma_weights
+from predict import _cobb_douglas
 
 
 FACTORS = list('cni')
@@ -43,6 +46,26 @@ def expected_predict():
         columns=FACTORS,
         index=FACTORS
     )
+    out['sigma_points'] = pd.DataFrame(
+        data=[
+            [12.0, 10.0, 8.0],
+            [24.0, 10.0, 8.0],
+            [18.0, 20.0, 8.0],
+            [16.0, 12.0, 16.0],
+            [0, 10.0, 8.0],
+            [6.0, 0, 8.0],
+            [8.0, 8.0, 0]
+
+        ],
+        columns=FACTORS,
+        index=range(7)
+    )
+    out['sigma_weights'] = pd.Series(
+        data=[0.25, 0.125, 0.125, 0.125, 0.125, 0.125, 0.125],
+        index=range(7)
+    )
+    out['cobb_douglas'] = pd.Series(data=[15.4919, 21.9089, 26.8328, 27.7128, 0, 0, 0])
+    
     return out
 
 
@@ -55,3 +78,19 @@ def test_square_root_unscented_predict_cov_values(setup_predict, expected_predic
     calc_mean, calc_root_cov = square_root_unscented_predict(**setup_predict)
     calc_cov = calc_root_cov.dot(calc_root_cov.T)
     assert_frame_equal(calc_cov, expected_predict['cov'])
+
+
+def test_square_root_unscented_predict_sigma_points(setup_predict, expected_predict):
+    calc_sigma_points = _calculate_sigma_points(setup_predict['state'], setup_predict['root_cov'], setup_predict['kappa'])
+    assert_frame_equal(calc_sigma_points, expected_predict['sigma_points'])
+    
+    
+def test_square_root_unscented_predict_sigma_weights(setup_predict, expected_predict):
+    calc_sigma_weights = _calculate_sigma_weights(setup_predict['state'], setup_predict['kappa'])
+    assert_series_equal(calc_sigma_weights, expected_predict['sigma_weights'])
+    
+    
+def test_square_root_unscented_predict_cobb_douglas(setup_predict, expected_predict):
+    calc_sigma_points = _calculate_sigma_points(setup_predict['state'], setup_predict['root_cov'], setup_predict['kappa'])
+    calc_cobb_douglas = _cobb_douglas(calc_sigma_points, pd.Series(data=[0.5] * 3, index=FACTORS), 0.5)
+    assert_series_equal(calc_cobb_douglas, expected_predict['cobb_douglas'])
