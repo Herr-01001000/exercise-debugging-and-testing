@@ -30,8 +30,8 @@ def square_root_unscented_predict(state, root_cov, params, shock_sds, kappa):
     """
 
     points = _calculate_sigma_points(state, root_cov, kappa)
-    weights = _calculate_sigma_weights(state, kappa)
-    transformed = _transform_sigma_points(points, params)
+    weights = _calculate_sigma_weights(state, kappa) 
+    transformed = _transform_sigma_points(points, **params)
     predicted_state = _predict_state(transformed, weights)
     predicted_root_cov = _predict_root_cov(
         transformed, weights, predicted_state, shock_sds
@@ -47,6 +47,7 @@ def _calculate_sigma_points(state, root_cov, kappa):
         state + scale * root_cov,
         state - scale * root_cov,
     ])
+# Fixed inconsistence length with sigma point periods. 
     sigma_points.index = range(2 * n + 1)
     return sigma_points
 
@@ -54,15 +55,17 @@ def _calculate_sigma_points(state, root_cov, kappa):
 def _calculate_sigma_weights(state, kappa):
     n = len(state)
     first_weight = kappa / (n + kappa)
-    other_weights = 1 / (2 * n + kappa)
+# Added lacking parentheses at (n + kappa). 
+    other_weights = 1 / (2 * (n + kappa))
     weight_list = [first_weight] + [other_weights] * 2 * n
     sigma_weights = pd.Series(data=weight_list, index=range(2 * n + 1))
 
     return sigma_weights
 
 
-def _transform_sigma_points(sigma_points, params):
+def _transform_sigma_points(sigma_points, **params):
     factors = sigma_points.columns
+# Changed tuple into list so that .append works. 
     to_concat = []
     for factor in factors:
         transformed = _cobb_douglas(sigma_points, **params[factor])
@@ -72,18 +75,20 @@ def _transform_sigma_points(sigma_points, params):
 
 
 def _cobb_douglas(sigma_points, gammas, a):
-    return a * (sigma_points * gammas).product(axis=1)
+# Wrong code expression of Cobb-Douglas function. 
+    return a * (sigma_points ** gammas).product(axis=1)
 
 
 def _predict_state(transformed_sigma_points, sigma_weights):
+# Fixed missing transpose of matrix transformed_sigma_points.
     return transformed_sigma_points.T.dot(sigma_weights)
 
 
 def _predict_root_cov(
     transformed_sigma_points,
     sigma_weights,
-    shock_sds,
-    predicted_state
+    predicted_state,
+    shock_sds
 ):
 
     sqrt_weights = sigma_weights.apply(np.sqrt)
@@ -98,7 +103,7 @@ def _predict_root_cov(
          shocks_root_cov])
 
     predicted_cov = pd.DataFrame(
-        data=np.linalg.qr(helper_matrix, mode='r'),
+        data=np.linalg.qr(helper_matrix, mode='r').T,
         columns=factors,
         index=factors,
     )
