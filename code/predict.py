@@ -4,6 +4,7 @@ The functions use pandas for most of the calculations. This means that for
 most operations the order of columns or the index is irrelevant. Nevertheless,
 the order might be relevant whenever matrix factorizations are involved!
 
+We did not fix the mistake.
 """
 
 import pandas as pd
