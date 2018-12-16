@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 from pandas.testing import assert_frame_equal, assert_series_equal
 
+from update import square_root_linear_update
 
 FACTORS = list('cni')
 
@@ -27,7 +28,8 @@ def setup_update():
 
     return out
 
-
+    
+# Use the formulae for the normal linear update to generate test cases.
 predicted_measurement = setup_update()['loadings'].dot(setup_update()['state'])
 residual = setup_update()['measurement'] - predicted_measurement
 cov = setup_update()['root_cov'].dot(setup_update()['root_cov'].T)
@@ -38,4 +40,25 @@ updated_state = setup_update()['state'] + kalman_gain.multiply(residual)
 updated_cov = cov - f.to_frame().dot(f.to_frame().T).div(var_y)
 
 
+@pytest.fixture
+def expected_update():
+    
+    out = {}
+    out['mean'] = updated_state
+    out['cov'] = updated_cov
+    out['residual'] = residual
+    out['variance_y'] = var_y
+    out['kalman_gain'] = kalman_gain
+    
+    return out
 
+
+def test_square_root_linear_update_mean(setup_update, expected_update):
+    calc_mean, calc_root_cov = square_root_linear_update(**setup_update)
+    assert_series_equal(calc_mean, expected_update['mean'])
+    
+
+def test_square_root_linear_update_cov_values(setup_update, expected_update):
+    calc_mean, calc_root_cov = square_root_linear_update(**setup_update)
+    calc_cov = calc_root_cov.dot(calc_root_cov.T)
+    assert_frame_equal(calc_cov, expected_update['cov'])
