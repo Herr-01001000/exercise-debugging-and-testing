@@ -102,7 +102,7 @@ def _predict_root_cov(
     helper_matrix = pd.concat(
         [weighted_deviations,
          shocks_root_cov])
-
+# Added missing transpose.
     predicted_cov = pd.DataFrame(
         data=np.linalg.qr(helper_matrix, mode='r').T,
         columns=factors,
