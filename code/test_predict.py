@@ -65,7 +65,7 @@ def expected_predict():
         index=range(7)
     )
     out['cobb_douglas'] = pd.Series(data=[15.4919, 21.9089, 26.8328, 27.7128, 0, 0, 0])
-    
+
     return out
 
 
@@ -83,13 +83,13 @@ def test_square_root_unscented_predict_cov_values(setup_predict, expected_predic
 def test_square_root_unscented_predict_sigma_points(setup_predict, expected_predict):
     calc_sigma_points = _calculate_sigma_points(setup_predict['state'], setup_predict['root_cov'], setup_predict['kappa'])
     assert_frame_equal(calc_sigma_points, expected_predict['sigma_points'])
-    
-    
+
+
 def test_square_root_unscented_predict_sigma_weights(setup_predict, expected_predict):
     calc_sigma_weights = _calculate_sigma_weights(setup_predict['state'], setup_predict['kappa'])
     assert_series_equal(calc_sigma_weights, expected_predict['sigma_weights'])
-    
-    
+
+
 def test_square_root_unscented_predict_cobb_douglas(setup_predict, expected_predict):
     calc_sigma_points = _calculate_sigma_points(setup_predict['state'], setup_predict['root_cov'], setup_predict['kappa'])
     calc_cobb_douglas = _cobb_douglas(calc_sigma_points, pd.Series(data=[0.5] * 3, index=FACTORS), 0.5)
